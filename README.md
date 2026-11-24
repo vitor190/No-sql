@@ -175,5 +175,4 @@ npm run typecheck
 | `404` em tudo, até em `/Mensagem/count` depois do setup | Abra `http://localhost:8081/` no navegador e veja em qual caminho está a API; se for, por exemplo, `/rest/data`, use `GS_REST_URL=http://localhost:8081/rest/data`. |
 | Porta 8081 ocupada | Troque o `port` em `gigaspaces/chat-rest-pu/META-INF/spring/pu.xml`, gere o jar de novo (`cd gigaspaces/chat-rest-pu && jar cf ../chat-rest.jar META-INF`) e ajuste `GS_REST_URL`. |
 | A imagem `16.1.0` não baixa em outro computador | O script cai automaticamente para `latest`. Para forçar outra: `$env:GS_IMAGE="gigaspaces/xap-enterprise:latest"` antes de rodar. |
-#   N o - s q l  
- 
+#
