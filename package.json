@@ -1,0 +1,25 @@
+{
+  "name": "gigaspaces-chat",
+  "version": "1.0.0",
+  "description": "Projeto 3 - NoSQL (Tuple Store): chat em tempo real com CRUD no GigaSpaces, em TypeScript",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "setup": "tsx src/scripts/setup.ts",
+    "crud": "tsx src/scripts/crud-demo.ts",
+    "build:web": "tsc -p tsconfig.web.json",
+    "start": "npm run build:web && tsx src/server/index.ts",
+    "simulador": "tsx src/dev/fake-gigaspaces.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

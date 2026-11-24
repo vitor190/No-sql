@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SpaceChat</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <!-- ============================================================ ENTRADA -->
+  <div id="login" class="login">
+    <form id="login-form" class="card login-card">
+      <div class="marca">💬 SpaceChat</div>
+      <h1>Chat em tempo real sobre o GigaSpaces</h1>
+      <p>Cada mensagem deste chat é uma <b>tupla</b> guardada no <b>Space</b> do GigaSpaces, um banco de dados em memória do paradigma de <b>armazenamento de tuplas</b>.</p>
+      <label for="login-nome">Seu nome</label>
+      <input id="login-nome" maxlength="40" autocomplete="off" required placeholder="ex.: Ana" />
+      <button type="submit" class="primario">Entrar no chat</button>
+      <p id="login-erro" class="erro" role="alert"></p>
+      <ul class="dicas">
+        <li>Ao entrar, o servidor grava uma tupla <code>Usuario</code> no Space (<b>write</b>).</li>
+        <li>Para mostrar o tempo real, abra uma <b>janela anônima</b> e entre com outro nome.</li>
+      </ul>
+    </form>
+  </div>
+
+  <!-- ============================================================ APP -->
+  <div id="app" class="app" hidden>
+    <header class="topo">
+      <div class="marca">💬 SpaceChat <span class="sub">chat em tempo real · GigaSpaces (tuple store)</span></div>
+      <div class="topo-dir">
+        <span id="conexao" class="status">conectando…</span>
+        <button id="btn-ajuda" class="sec">❓ Como funciona</button>
+        <button id="btn-tema" class="sec icone" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
+        <span class="eu">Você: <b id="eu"></b></span>
+        <button id="sair" class="sec">Sair</button>
+      </div>
+    </header>
+
+    <div id="aviso" class="aviso" role="alert" hidden></div>
+
+    <div class="layout">
+      <!-- ---------------------------------------------- coluna esquerda -->
+      <aside class="lateral">
+        <section>
+          <h2>Salas <span class="tipo">tuplas Sala</span></h2>
+          <ul id="salas" class="lista"></ul>
+          <form id="nova-sala" class="linha">
+            <input id="nova-sala-nome" placeholder="Nova sala" maxlength="30" required aria-label="Nome da nova sala" />
+            <button title="Cria uma tupla Sala no Space (write)"><span class="crud C">C</span> Criar</button>
+          </form>
+        </section>
+
+        <section>
+          <h2>Usuários <span class="tipo">tuplas Usuario</span></h2>
+          <ul id="usuarios" class="lista"></ul>
+        </section>
+
+        <section class="contadores">
+          <h2>Tuplas no Space agora</h2>
+          <div id="contagens" class="stats">
+            <div class="stat"><b data-tipo="mensagens">–</b><span>Mensagem</span></div>
+            <div class="stat"><b data-tipo="salas">–</b><span>Sala</span></div>
+            <div class="stat"><b data-tipo="usuarios">–</b><span>Usuario</span></div>
+          </div>
+          <p class="nota">Conferido no banco com <code>count</code> a cada 3 s.</p>
+          <a href="http://localhost:8099" target="_blank" rel="noopener">Abrir a console do GigaSpaces ↗</a>
+        </section>
+      </aside>
+
+      <!-- ---------------------------------------------- chat -->
+      <main class="chat">
+        <header class="chat-topo">
+          <div>
+            <h2 id="sala-titulo">#</h2>
+            <p id="sala-desc" class="muted"></p>
+          </div>
+          <button id="apagar-sala" class="sec perigo" title="take da Sala + takeMultiple das mensagens"><span class="crud D">D</span> Apagar sala</button>
+        </header>
+
+        <div class="legenda" aria-label="Legenda do CRUD">
+          <span><span class="crud C">C</span> Enviar → <b>write</b></span>
+          <span><span class="crud R">R</span> Abrir sala / ver tupla → <b>read</b></span>
+          <span><span class="crud U">U</span> Editar → <b>write</b> (mesmo id)</span>
+          <span><span class="crud D">D</span> Apagar → <b>take</b></span>
+        </div>
+
+        <ol id="mensagens" aria-live="polite"></ol>
+
+        <form id="enviar" class="composer">
+          <input id="texto" placeholder="Escreva uma mensagem e aperte Enter" maxlength="2000" autocomplete="off" aria-label="Mensagem" />
+          <button class="primario" title="Grava uma tupla Mensagem nova (write)"><span class="crud C">C</span> Enviar</button>
+        </form>
+      </main>
+
+      <!-- ---------------------------------------------- painel do banco -->
+      <aside class="painel">
+        <header>
+          <h2>O que aconteceu no banco</h2>
+          <p class="muted">Cada ação no chat vira operações no Space. A mais recente fica em cima.</p>
+          <label class="check"><input type="checkbox" id="mostrar-polling" /> mostrar leituras automáticas (a cada 1 s)</label>
+        </header>
+        <ol id="acoes"><li class="vazio">Faça alguma coisa no chat (abrir uma sala, enviar uma mensagem…) e as operações aparecem aqui.</li></ol>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============================================================ JANELAS -->
+  <dialog id="dlg-ajuda" class="dlg dlg-largo">
+    <form method="dialog" class="dlg-topo"><h2>Como funciona o SpaceChat</h2><button class="sec icone" aria-label="Fechar">✕</button></form>
+    <div class="dlg-corpo">
+      <h3>1. Caminho de uma mensagem</h3>
+      <div class="fluxo">
+        <div class="caixa">Navegador<small>esta tela</small></div>
+        <span class="seta">→</span>
+        <div class="caixa">Servidor do chat<small>Node.js + TypeScript · :3000</small></div>
+        <span class="seta">→</span>
+        <div class="caixa">REST Service<small>PU chat-rest · :8081</small></div>
+        <span class="seta">→</span>
+        <div class="caixa destaque">Space <b>chatSpace</b><small>GigaSpaces, em memória · 2 partições</small></div>
+      </div>
+
+      <h3>2. Cada ação do chat é uma operação de tuple space</h3>
+      <table class="tabela">
+        <thead><tr><th>No chat</th><th>CRUD</th><th>Operação no Space</th><th>Requisição HTTP</th></tr></thead>
+        <tbody>
+          <tr><td>Enviar mensagem</td><td><span class="crud C">C</span></td><td><b>write</b>: grava uma tupla nova</td><td><code>POST /Mensagem</code></td></tr>
+          <tr><td>Abrir sala / ver tupla</td><td><span class="crud R">R</span></td><td><b>read</b>: lê uma cópia (a tupla fica)</td><td><code>GET /Mensagem?query=salaId='geral'</code><br /><code>GET /Mensagem/{id}</code></td></tr>
+          <tr><td>Editar mensagem</td><td><span class="crud U">U</span></td><td><b>write</b> com o mesmo id: substitui</td><td><code>POST /Mensagem</code></td></tr>
+          <tr><td>Apagar mensagem</td><td><span class="crud D">D</span></td><td><b>take</b>: lê <i>e</i> remove</td><td><code>DELETE /Mensagem/{id}</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>3. Como uma mensagem vira tupla</h3>
+      <pre class="tupla-ex">Mensagem( id="msg-…", salaId="geral", autorId="ana", texto="Oi!", enviadaEm=1731770000000, editada=false )</pre>
+      <ul>
+        <li><b>salaId</b> é a <i>routing property</i>: decide em qual das 2 partições a tupla fica. Todas as mensagens de uma sala ficam juntas, então abrir a sala consulta uma partição só.</li>
+        <li>Abrir a sala é uma <b>consulta por template</b>: só <code>salaId</code> é preenchido, e os outros campos funcionam como coringa.</li>
+      </ul>
+
+      <h3>4. E o "tempo real"?</h3>
+      <p>A tela pergunta ao Space a cada 1 segundo se há mensagens novas (<i>polling</i>). A API REST do GigaSpaces não tem <code>notify</code> (ele existe nas APIs Java e .NET). Marque "mostrar leituras automáticas" no painel da direita para ver essas leituras.</p>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-tupla" class="dlg">
+    <form method="dialog" class="dlg-topo"><h2>Tupla no Space</h2><button class="sec icone" aria-label="Fechar">✕</button></form>
+    <div class="dlg-corpo" id="tupla-corpo"></div>
+  </dialog>
+
+  <dialog id="dlg-confirmar" class="dlg">
+    <form method="dialog">
+      <div class="dlg-topo"><h2 id="confirmar-titulo">Confirmar</h2></div>
+      <div class="dlg-corpo"><p id="confirmar-texto"></p></div>
+      <div class="dlg-botoes">
+        <button value="nao" class="sec">Cancelar</button>
+        <button value="sim" class="perigo-cheio" id="confirmar-sim">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toasts" aria-live="assertive"></div>
+
+  <script>
+    // Tema antes de desenhar a página (evita "piscar").
+    try { const t = localStorage.getItem("spacechat-tema"); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

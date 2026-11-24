@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Processing Unit "chat-rest": sobe o REST Service do GigaSpaces (Jetty embutido)
+  apontando para o Space "chatSpace", na porta 8081.
+  É por este endpoint HTTP que a aplicação TypeScript conversa com o Space.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:os-core="http://www.openspaces.org/schema/core"
+       xsi:schemaLocation="
+         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.openspaces.org/schema/core http://www.openspaces.org/schema/core/openspaces-core.xsd">
+
+  <os-core:rest id="chatRest" space-name="chatSpace" port="8081">
+    <os-core:properties>
+      <props>
+        <prop key="datetime_format">yyyy-MM-dd HH:mm:ss</prop>
+      </props>
+    </os-core:properties>
+  </os-core:rest>
+
+</beans>
